@@ -49,6 +49,7 @@ func (s *Server) acceptSerialRequests(port serial.Port) {
 			frame, err := NewRTUFrame(packet)
 			if err != nil {
 				log.Printf(errStringBadFrame, err)
+				log.Printf(logPacket, string(buffer))
 				continue
 			}
 			request := &Request{port, frame}
