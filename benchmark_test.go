@@ -184,7 +184,7 @@ func ExampleServer_RegisterFunctionHandler() {
 	// Override ReadDiscreteInputs function.
 	serv.RegisterFunctionHandler(2,
 		func(s *Server, frame Framer) ([]byte, *Exception) {
-			register, numRegs, endRegister := registerAddressAndNumber(frame)
+			register, numRegs, endRegister := RegisterAddressAndNumber(frame)
 			// Check the request is within the allocated memory
 			if endRegister > 65535 {
 				return []byte{}, &IllegalDataAddress

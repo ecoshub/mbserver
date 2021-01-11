@@ -6,7 +6,7 @@ import (
 
 // ReadCoils function 1, reads coils from internal memory.
 func ReadCoils(s *Server, frame Framer) ([]byte, *Exception) {
-	register, numRegs, endRegister := registerAddressAndNumber(frame)
+	register, numRegs, endRegister := RegisterAddressAndNumber(frame)
 	if endRegister > 65535 {
 		return []byte{}, &IllegalDataAddress
 	}
@@ -27,7 +27,7 @@ func ReadCoils(s *Server, frame Framer) ([]byte, *Exception) {
 
 // ReadDiscreteInputs function 2, reads discrete inputs from internal memory.
 func ReadDiscreteInputs(s *Server, frame Framer) ([]byte, *Exception) {
-	register, numRegs, endRegister := registerAddressAndNumber(frame)
+	register, numRegs, endRegister := RegisterAddressAndNumber(frame)
 	if endRegister > 65535 {
 		return []byte{}, &IllegalDataAddress
 	}
@@ -48,7 +48,7 @@ func ReadDiscreteInputs(s *Server, frame Framer) ([]byte, *Exception) {
 
 // ReadHoldingRegisters function 3, reads holding registers from internal memory.
 func ReadHoldingRegisters(s *Server, frame Framer) ([]byte, *Exception) {
-	register, numRegs, endRegister := registerAddressAndNumber(frame)
+	register, numRegs, endRegister := RegisterAddressAndNumber(frame)
 	if endRegister > 65536 {
 		return []byte{}, &IllegalDataAddress
 	}
@@ -57,7 +57,7 @@ func ReadHoldingRegisters(s *Server, frame Framer) ([]byte, *Exception) {
 
 // ReadInputRegisters function 4, reads input registers from internal memory.
 func ReadInputRegisters(s *Server, frame Framer) ([]byte, *Exception) {
-	register, numRegs, endRegister := registerAddressAndNumber(frame)
+	register, numRegs, endRegister := RegisterAddressAndNumber(frame)
 	if endRegister > 65536 {
 		return []byte{}, &IllegalDataAddress
 	}
@@ -66,7 +66,7 @@ func ReadInputRegisters(s *Server, frame Framer) ([]byte, *Exception) {
 
 // WriteSingleCoil function 5, write a coil to internal memory.
 func WriteSingleCoil(s *Server, frame Framer) ([]byte, *Exception) {
-	register, value := registerAddressAndValue(frame)
+	register, value := RegisterAddressAndValue(frame)
 	// TODO Should we use 0 for off and 65,280 (FF00 in hexadecimal) for on?
 	if value != 0 {
 		value = 1
@@ -77,14 +77,14 @@ func WriteSingleCoil(s *Server, frame Framer) ([]byte, *Exception) {
 
 // WriteHoldingRegister function 6, write a holding register to internal memory.
 func WriteHoldingRegister(s *Server, frame Framer) ([]byte, *Exception) {
-	register, value := registerAddressAndValue(frame)
+	register, value := RegisterAddressAndValue(frame)
 	s.HoldingRegisters[register] = value
 	return frame.GetData()[0:4], &Success
 }
 
 // WriteMultipleCoils function 15, writes holding registers to internal memory.
 func WriteMultipleCoils(s *Server, frame Framer) ([]byte, *Exception) {
-	register, numRegs, endRegister := registerAddressAndNumber(frame)
+	register, numRegs, endRegister := RegisterAddressAndNumber(frame)
 	valueBytes := frame.GetData()[5:]
 
 	if endRegister > 65536 {
@@ -115,7 +115,7 @@ func WriteMultipleCoils(s *Server, frame Framer) ([]byte, *Exception) {
 
 // WriteHoldingRegisters function 16, writes holding registers to internal memory.
 func WriteHoldingRegisters(s *Server, frame Framer) ([]byte, *Exception) {
-	register, numRegs, _ := registerAddressAndNumber(frame)
+	register, numRegs, _ := RegisterAddressAndNumber(frame)
 	valueBytes := frame.GetData()[5:]
 	var exception *Exception
 	var data []byte
