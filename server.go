@@ -20,7 +20,7 @@ type Server struct {
 	Coils            []byte
 	HoldingRegisters []uint16
 	InputRegisters   []uint16
-	errorHandler     *func(err error)
+	onErrorhandler   *func(err error)
 }
 
 // Request contains the connection and Modbus frame.
@@ -81,9 +81,13 @@ func (s *Server) handle(request *Request) Framer {
 	return response
 }
 
-// ErrorHandler error handler pipe
-func (s *Server) ErrorHandler(f func(err error)) {
-	s.errorHandler = &f
+// SetErrorHandler error handler pipe
+func (s *Server) SetErrorHandler(f func(err error)) {
+	if s.onErrorhandler != nil {
+		s.onErrorhandler = &f
+		return
+	}
+	s.onErrorhandler = &f
 }
 
 // All requests are handled synchronously to prevent modbus memory corruption.
