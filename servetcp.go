@@ -1,21 +1,19 @@
 package mbserver
 
 import (
+	"fmt"
 	"io"
-	"log"
 	"net"
-	"strings"
 )
 
 func (s *Server) accept(listen net.Listener) error {
 	for {
 		conn, err := listen.Accept()
 		if err != nil {
-			if strings.Contains(err.Error(), "use of closed network connection") {
-				return nil
-			}
-			log.Printf("Unable to accept connections: %#v\n", err)
-			return err
+			// if strings.Contains(err.Error(), "use of closed network connection") {
+			// 	return nil
+			// }
+			return fmt.Errorf("Unable to accept connections: %v", err)
 		}
 
 		go func(conn net.Conn) {
@@ -26,7 +24,7 @@ func (s *Server) accept(listen net.Listener) error {
 				bytesRead, err := conn.Read(packet)
 				if err != nil {
 					if err != io.EOF {
-						log.Printf("read error %v\n", err)
+						s.errorPipe <- fmt.Errorf("read error %v", err)
 					}
 					return
 				}
@@ -35,7 +33,7 @@ func (s *Server) accept(listen net.Listener) error {
 
 				frame, err := NewTCPFrame(packet)
 				if err != nil {
-					log.Printf("bad packet error %v\n", err)
+					s.errorPipe <- fmt.Errorf("bad packet error %v", err)
 					return
 				}
 
@@ -51,7 +49,6 @@ func (s *Server) accept(listen net.Listener) error {
 func (s *Server) ListenTCP(addressPort string) (err error) {
 	listen, err := net.Listen("tcp", addressPort)
 	if err != nil {
-		log.Printf("Failed to Listen: %v\n", err)
 		return err
 	}
 	s.listeners = append(s.listeners, listen)

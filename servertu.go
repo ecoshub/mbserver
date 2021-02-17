@@ -1,8 +1,8 @@
 package mbserver
 
 import (
+	"fmt"
 	"io"
-	"log"
 
 	"github.com/goburrow/serial"
 )
@@ -12,7 +12,8 @@ import (
 func (s *Server) ListenRTU(serialConfig *serial.Config, slaveID uint8) (err error) {
 	port, err := serial.Open(serialConfig)
 	if err != nil {
-		log.Fatalf("failed to open %s: %v\n", serialConfig.Address, err)
+		return err
+
 	}
 	s.ports = append(s.ports, port)
 	go s.acceptSerialRequests(port, slaveID)
@@ -26,7 +27,7 @@ func (s *Server) acceptSerialRequests(port serial.Port, slaveID uint8) {
 		bytesRead, err := port.Read(buffer)
 		if err != nil {
 			if err != io.EOF {
-				log.Printf("serial read error %v\n", err)
+				s.errorPipe <- fmt.Errorf("serial read error %v", err)
 			}
 			return
 		}
@@ -38,14 +39,14 @@ func (s *Server) acceptSerialRequests(port serial.Port, slaveID uint8) {
 
 			frame, err := NewRTUFrame(packet)
 			if err != nil {
-				log.Printf("bad serial frame error %v\n", err)
+				s.errorPipe <- fmt.Errorf("serial read error %v", err)
 				return
 			}
 			if frame.GetAddress() == slaveID {
 				request := &Request{port, frame}
 				s.requestChan <- request
 			} else {
-				log.Printf("wrong slave address")
+				s.errorPipe <- fmt.Errorf("serial read error %v", err)
 			}
 
 		}

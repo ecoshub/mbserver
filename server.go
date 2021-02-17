@@ -20,6 +20,7 @@ type Server struct {
 	Coils            []byte
 	HoldingRegisters []uint16
 	InputRegisters   []uint16
+	errorPipe        chan error
 }
 
 // Request contains the connection and Modbus frame.
@@ -37,6 +38,7 @@ func NewServer() *Server {
 	s.Coils = make([]byte, 65536)
 	s.HoldingRegisters = make([]uint16, 65536)
 	s.InputRegisters = make([]uint16, 65536)
+	s.errorPipe = make(chan error)
 
 	// Add default functions.
 	s.function[1] = ReadCoils
@@ -78,6 +80,11 @@ func (s *Server) handle(request *Request) Framer {
 	}
 
 	return response
+}
+
+// ErrorHandler error handler pipe
+func (s *Server) ErrorHandler(f func(err error)) {
+	f(<-s.errorPipe)
 }
 
 // All requests are handled synchronously to prevent modbus memory corruption.
