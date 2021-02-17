@@ -1,4 +1,4 @@
-module mbserver
+module github.com/ecoshub/mbserver
 
 go 1.15
 
