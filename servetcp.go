@@ -24,8 +24,8 @@ func (s *Server) accept(listen net.Listener) error {
 				bytesRead, err := conn.Read(packet)
 				if err != nil {
 					if err != io.EOF {
-						if s.errorHandler != nil {
-							(*s.errorHandler)(fmt.Errorf("[mbserver] read error %v", err))
+						if s.onErrorhandler != nil {
+							(*s.onErrorhandler)(fmt.Errorf("[mbserver] read error %v", err))
 						}
 					}
 					return
@@ -35,8 +35,8 @@ func (s *Server) accept(listen net.Listener) error {
 
 				frame, err := NewTCPFrame(packet)
 				if err != nil {
-					if s.errorHandler != nil {
-						(*s.errorHandler)(fmt.Errorf("[mbserver] bad packet error %v", err))
+					if s.onErrorhandler != nil {
+						(*s.onErrorhandler)(fmt.Errorf("[mbserver] bad packet error %v", err))
 					}
 					return
 				}
