@@ -37,7 +37,7 @@ func TestModbusRTU(t *testing.T) {
 		DataBits: 8,
 		StopBits: 1,
 		Parity:   "N",
-		Timeout:  10 * time.Second})
+		Timeout:  10 * time.Second}, 1)
 	if err != nil {
 		t.Fatalf("failed to listen, got %v\n", err)
 	}

@@ -7,53 +7,47 @@ import (
 	"github.com/goburrow/serial"
 )
 
-var (
-	errStringOpenFailed string = "failed to open %s: %v\n"
-	errStringSerialRead string = "serial read error %v\n"
-	errStringBadFrame   string = "bad serial frame error %v\n"
-	errStringUnknown    string = "unknown error %v\n"
-	logPacket           string = "packet content: %v\n"
-)
-
 // ListenRTU starts the Modbus server listening to a serial device.
 // For example:  err := s.ListenRTU(&serial.Config{Address: "/dev/ttyUSB0"})
-func (s *Server) ListenRTU(serialConfig *serial.Config) (err error) {
+func (s *Server) ListenRTU(serialConfig *serial.Config, slaveID uint8) (err error) {
 	port, err := serial.Open(serialConfig)
 	if err != nil {
-		log.Printf(errStringOpenFailed, serialConfig.Address, err)
-		return err
+		log.Fatalf("failed to open %s: %v\n", serialConfig.Address, err)
 	}
 	s.ports = append(s.ports, port)
-	go s.acceptSerialRequests(port)
-	return nil
+	go s.acceptSerialRequests(port, slaveID)
+	return err
 }
 
-func (s *Server) acceptSerialRequests(port serial.Port) {
+func (s *Server) acceptSerialRequests(port serial.Port, slaveID uint8) {
 	for {
 		buffer := make([]byte, 512)
 
 		bytesRead, err := port.Read(buffer)
 		if err != nil {
 			if err != io.EOF {
-				log.Printf(errStringSerialRead, err)
-				log.Printf(logPacket, string(buffer))
-				continue
+				log.Printf("serial read error %v\n", err)
 			}
-			log.Printf(errStringUnknown, err)
-			continue
+			return
 		}
 
 		if bytesRead != 0 {
+
 			// Set the length of the packet to the number of read bytes.
 			packet := buffer[:bytesRead]
+
 			frame, err := NewRTUFrame(packet)
 			if err != nil {
-				log.Printf(errStringBadFrame, err)
-				log.Printf(logPacket, string(buffer))
-				continue
+				log.Printf("bad serial frame error %v\n", err)
+				return
 			}
-			request := &Request{port, frame}
-			s.requestChan <- request
+			if frame.GetAddress() == slaveID {
+				request := &Request{port, frame}
+				s.requestChan <- request
+			} else {
+				log.Printf("wrong slave address")
+			}
+
 		}
 	}
 }
