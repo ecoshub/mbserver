@@ -13,7 +13,7 @@ func (s *Server) accept(listen net.Listener) error {
 			// if strings.Contains(err.Error(), "use of closed network connection") {
 			// 	return nil
 			// }
-			return fmt.Errorf("Unable to accept connections: %v", err)
+			return fmt.Errorf("[mbserver] Unable to accept connections: %v", err)
 		}
 
 		go func(conn net.Conn) {
@@ -24,7 +24,9 @@ func (s *Server) accept(listen net.Listener) error {
 				bytesRead, err := conn.Read(packet)
 				if err != nil {
 					if err != io.EOF {
-						s.errorPipe <- fmt.Errorf("read error %v", err)
+						if s.errorHandler != nil {
+							(*s.errorHandler)(fmt.Errorf("[mbserver] read error %v", err))
+						}
 					}
 					return
 				}
@@ -33,7 +35,9 @@ func (s *Server) accept(listen net.Listener) error {
 
 				frame, err := NewTCPFrame(packet)
 				if err != nil {
-					s.errorPipe <- fmt.Errorf("bad packet error %v", err)
+					if s.errorHandler != nil {
+						(*s.errorHandler)(fmt.Errorf("[mbserver] bad packet error %v", err))
+					}
 					return
 				}
 

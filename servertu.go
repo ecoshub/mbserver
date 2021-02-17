@@ -27,7 +27,9 @@ func (s *Server) acceptSerialRequests(port serial.Port, slaveID uint8) {
 		bytesRead, err := port.Read(buffer)
 		if err != nil {
 			if err != io.EOF {
-				s.errorPipe <- fmt.Errorf("serial read error %v", err)
+				if s.errorHandler != nil {
+					(*s.errorHandler)(fmt.Errorf("[mbserver] serial read error %v", err))
+				}
 			}
 			return
 		}
@@ -39,14 +41,18 @@ func (s *Server) acceptSerialRequests(port serial.Port, slaveID uint8) {
 
 			frame, err := NewRTUFrame(packet)
 			if err != nil {
-				s.errorPipe <- fmt.Errorf("serial read error %v", err)
+				if s.errorHandler != nil {
+					(*s.errorHandler)(fmt.Errorf("[mbserver] serial read error %v", err))
+				}
 				return
 			}
 			if frame.GetAddress() == slaveID {
 				request := &Request{port, frame}
 				s.requestChan <- request
 			} else {
-				s.errorPipe <- fmt.Errorf("serial read error %v", err)
+				if s.errorHandler != nil {
+					(*s.errorHandler)(fmt.Errorf("[mbserver] serial read error %v", err))
+				}
 			}
 
 		}
