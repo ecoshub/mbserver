@@ -94,8 +94,12 @@ func (s *Server) SetErrorHandler(f func(err error)) {
 func (s *Server) handler() {
 	for {
 		request := <-s.requestChan
-		response := s.handle(request)
-		request.conn.Write(response.Bytes())
+		// response := s.handle(request)
+		// request.conn.Write(response.Bytes())
+		go func() {
+			response := s.handle(request)
+			request.conn.Write(response.Bytes())
+		}()
 	}
 }
 

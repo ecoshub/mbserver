@@ -1,10 +1,11 @@
 package mbserver
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"log"
 
-	"github.com/ecoshub/breakx"
 	"github.com/goburrow/serial"
 )
 
@@ -22,53 +23,48 @@ func (s *Server) ListenRTU(serialConfig *serial.Config, slaveID uint8) (err erro
 }
 
 func (s *Server) acceptSerialRequests(port serial.Port, slaveID uint8) {
+	buffer := bytes.Buffer{}
 	for {
-		breakx.Point()
-		buffer := make([]byte, 512)
-
-		bytesRead, err := port.Read(buffer)
-		breakx.Point()
+		buf := make([]byte, 512)
+		bytesRead, err := port.Read(buf)
+		log.Println("[mbserver] buffer", buf[:bytesRead])
 		if err != nil {
-			breakx.Point()
 			if err != io.EOF {
-				breakx.Point()
 				if s.onErrorhandler != nil {
-					breakx.Point()
 					(*s.onErrorhandler)(fmt.Errorf("[mbserver] serial read error %v", err))
 				}
 			}
 			return
 		}
+		log.Println("[mbserver] buffer", buf[:bytesRead])
 
-		breakx.Point()
-		if bytesRead != 0 {
+		buffer.Write(buf[:bytesRead])
+		for buffer.Len() > 5 {
+			b := make([]byte, buffer.Len())
+			_, err := buffer.Read(b)
+			if err != nil {
+				log.Printf("buffer read error %v\n", err)
+				break
+			}
 
 			// Set the length of the packet to the number of read bytes.
-			packet := buffer[:bytesRead]
+			packet := b[:bytesRead]
 
-			breakx.Point()
 			frame, err := NewRTUFrame(packet)
 			if err != nil {
-				breakx.Point()
 				if s.onErrorhandler != nil {
-					breakx.Point()
 					(*s.onErrorhandler)(fmt.Errorf("[mbserver] serial read error %v", err))
 				}
 				return
 			}
-			breakx.Point()
 			if frame.GetAddress() == slaveID {
-				breakx.Point()
 				request := &Request{port, frame}
 				s.requestChan <- request
 			} else {
-				breakx.Point()
 				if s.onErrorhandler != nil {
-					breakx.Point()
 					(*s.onErrorhandler)(fmt.Errorf("[mbserver] serial read error %v", err))
 				}
 			}
-
 		}
 	}
 }
